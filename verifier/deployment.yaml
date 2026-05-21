@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verifier
+  labels:
+    app: verifier
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: verifier
+  template:
+    metadata:
+      labels:
+        app: verifier
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: verifier
+          image: verifier:v1
+          imagePullPolicy: Never
+          env:
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: MINIO_ENDPOINT
+              value: http://minio:9000
+            - name: MINIO_ACCESS_KEY
+              value: minio
+            - name: MINIO_SECRET_KEY
+              value: minio12345
+            - name: MINIO_BUCKET
+              value: proofs
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
