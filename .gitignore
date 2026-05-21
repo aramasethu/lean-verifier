@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.Rhistory
+DS_store
+*.env
+.env*
+EOF
+BUILD_LOG.md
+instructions.md
+jd.md
