@@ -1,0 +1,46 @@
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: train-v1
+  namespace: default
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        spec:
+          containers:
+            - name: pytorch
+              image: training:v1
+              imagePullPolicy: Never
+              env:
+                - name: MINIO_ENDPOINT
+                  value: http://minio:9000
+                - name: MINIO_ACCESS_KEY
+                  value: minio
+                - name: MINIO_SECRET_KEY
+                  value: minio12345
+                - name: MINIO_BUCKET
+                  value: proofs
+                - name: ADAPTER_VERSION
+                  value: "1"
+                - name: NUM_EPOCHS
+                  value: "1"
+                - name: BATCH_SIZE
+                  value: "1"
+                - name: GRAD_ACCUM
+                  value: "8"
+                - name: LR
+                  value: "1e-4"
+                - name: LORA_RANK
+                  value: "8"
+                - name: MAX_SEQ_LEN
+                  value: "256"
+              resources:
+                requests:
+                  cpu: "4"
+                  memory: 6Gi
+                limits:
+                  cpu: "6"
+                  memory: 8Gi
