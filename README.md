@@ -13,25 +13,25 @@ This is structured in a way that, a small model is asked to generate proofs (4 a
 The system is a five stage loop driven by an orchestrator. Work flows through Redis queues; artifacts (attempts, successes, trained adapters) are stored in MinIO.
 
 ```
-                  ┌──────────────────────────────────────┐
-                  │  Orchestrator (run_iteration.py)       │
-                  │  push problems → wait → metrics → train│
-                  └───────────────┬────────────────────────┘
-                                  │
-        ┌─────────────────────────┼─────────────────────────┐
-        │                         │                         │
-   ┌────▼─────┐   inference   ┌───▼──────┐   verify    ┌────▼─────┐
-   │  Redis    │  _queue       │ Inference │  _queue     │ Verifier │
-   │  queues   ├──────────────►│  pool     ├────────────►│  pool    │
-   │           │               │ (1 pod,   │             │ (1–5 pods│
-   │           │◄──────────────┤  Qwen)    │             │  KEDA)   │
-   └───────────┘  results      └───────────┘             └────┬─────┘
-        ▲                                                     │
-        │                                                     │ successes
-   ┌────┴──────┐                                         ┌────▼─────┐
-   │  Training  │◄────────────  reads successes/  ───────│  MinIO   │
-   │  PyTorchJob├──────────────  writes adapter/   ──────►│  storage │
-   └────────────┘                                         └──────────┘
+              ┌────────────────────────────────────────────┐
+              │              Orchestrator                  │
+              │   push problems → wait → metrics → train   │
+              └────────────────────┬───────────────────────┘
+                                   │ push problems
+                                   ▼
+   ┌─────────────┐  inference   ┌─────────────┐  verify    ┌─────────────┐
+   │             │   _queue     │  Inference  │  _queue    │  Verifier   │
+   │    Redis    ├─────────────►│    pool     ├───────────►│    pool     │
+   │   queues    │              │ (1 pod,Qwen)│            │ (1-5 pods,  │
+   │             │◄─────────────┤             │            │    KEDA)    │
+   └─────────────┘   results    └─────────────┘            └──────┬──────┘
+          ▲                                                       │
+          │                                                       │ successes
+          │ trigger                                               ▼
+   ┌──────┴──────┐         reads successes/             ┌─────────────┐
+   │  Training   │◄─────────────────────────────────────┤    MinIO    │
+   │ (PyTorchJob)├─────────────────────────────────────►│   storage   │
+   └─────────────┘         writes adapter/              └─────────────┘
 ```
 
 1. **Problem injection.** The orchestrator clears the queues and pushes problem statements (`{problem_id, statement}`) onto the Redis `inference_queue`.
